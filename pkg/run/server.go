@@ -1,6 +1,7 @@
 package run
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/bagaswh/lantas/pkg/config"
+	"github.com/docker/go-units"
 	"github.com/rs/zerolog"
 )
 
@@ -48,11 +50,13 @@ func (svr *Server) Start() {
 }
 
 func (svr *Server) acceptLoop(ln *net.TCPListener) {
-	connBuf := boundedAutoGrowingBuffer{}
+	b := make([]byte, 16*units.KiB)
+	connBuf := bytes.NewBuffer(b)
 
 	for {
 		conn, err := ln.AcceptTCP()
 		if err != nil {
+			_, readErr := connBuf.ReadFrom(conn)
 
 		}
 	}

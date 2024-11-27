@@ -14,11 +14,13 @@ Application from network A wants to send data to network B. The data goes throug
 Proxy A applies any transformations (such as compressing request) and sends the transformed data to proxy in network B.
 Proxy in network B does transformations (such as decompressing request) and forwards the transformed data to the application in network B.
 
-```        
-                                         tls & compressed
-+-------------+          +------------+            +--------------+        +--------------+
-| client-left | <-----> | lantas-left | <--------> | lantas-right | <----> | client-right |
-+-------------+          +------------+            +--------------+        +--------------+
+```   
+                                    
+                        +-------------+ tls & compressed  +--------------+
++-------------+         |             | ----------------> |              |        +--------------+
+| client-left | ------> | lantas-left |                   | lantas-right | <----- | client-right |
++-------------+         |             | <---------------- |              |        +--------------+
+                        +-------------+                   +--------------+
 ```
 
 For compresion functionality to work, Lantas needs to be deployed on both sides since it sends

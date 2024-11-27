@@ -5,6 +5,12 @@ upstreams:
     servers:
       - localhost:4242
     keepalive: 24
+    tls: true
+
+  backend:
+    servers:
+      - localhost:9898
+    keepalive: 24
 
 middleware_chains:
   gzip:
@@ -25,7 +31,9 @@ middleware_chains:
 
 servers:
   - listen:
-      - 127.0.0.1:2424
+      addresses:
+        - 127.0.0.1:4242
+      reusePort: true
 
     tls:
       certFile: cert.pem
