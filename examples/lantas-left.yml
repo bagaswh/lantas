@@ -1,0 +1,49 @@
+upstreams:
+  right:
+    # can only support one server for now
+    # specifying multiple servers will result in configuration error
+    servers:
+      - localhost:2424
+    keepalive: 24
+    tls: true
+
+middleware_chains:
+  gzip:
+    steps:
+      - compression:
+          algorithm: gzip
+          config:
+            compressionLevel: BEST_COMPRESSION
+            compressionStrategy: DEFAULT_STRATEGY
+            # minimum size of data so that compression applies
+            # if the data size is less than this, it's not compressed
+            sizeThreshold: 1024
+
+  gunzip:
+    steps:
+      - decompression:
+          algorithm: gzip
+
+servers:
+  - listen:
+      addresses:
+        - 127.0.0.1:4242
+      reusePort: true
+
+    tls:
+      certFile: cert.pem
+      keyFile: key.pem
+
+    # forward stream to these upstreams
+    upstreams:
+      - right
+
+    middlewares:
+      upstream:
+        # before writing to upstream, apply middlewares to the stream
+        prewrite:
+          - name: gzip
+
+        # after read-ing from upstream, apply middlewares to the stream
+        postread:
+          - name: gunzip
