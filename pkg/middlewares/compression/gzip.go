@@ -5,15 +5,44 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"fmt"
-	"io"
 
+	"github.com/bagaswh/lantas/pkg/middlewares"
 	"github.com/rs/zerolog/log"
 )
 
 type Gzip struct {
-	buf   bytes.Buffer
-	w     gzip.Writer
-	level string
+	buf        *bytes.Buffer
+	gzipWriter gzip.Writer
+	level      string
+}
+
+// Write writes b to gzip writer. The compressed bytes are stored in buf.
+func (gz *Gzip) Write(b []byte) (int, error) {
+	return gz.gzipWriter.Write(b)
+}
+
+func NewGzip(level string, bufferInitialSize int) *Gzip {
+	compLevel, err := getGzipLevel(level)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get gzip level, using default (DefaultCompression)")
+		compLevel = flate.DefaultCompression
+	}
+	b := make([]byte, 0, bufferInitialSize)
+	buf := bytes.NewBuffer(b)
+	gzipWriter, _ := gzip.NewWriterLevel(buf, compLevel)
+	return &Gzip{
+		level:      level,
+		gzipWriter: *gzipWriter,
+	}
+}
+
+func NewGzipMiddleware(gz *Gzip) middlewares.Constructor {
+	return func(ch middlewares.ConnHandler) middlewares.ConnHandler {
+
+	}
+}
+
+type Gunzip struct {
 }
 
 func getGzipLevel(level string) (int, error) {
@@ -29,20 +58,4 @@ func getGzipLevel(level string) (int, error) {
 	default:
 		return 0, fmt.Errorf("unknown compression level %s", level)
 	}
-}
-
-func NewGzip(level string, w io.Writer) *Gzip {
-	compLevel, err := getGzipLevel(level)
-	if err != nil {
-		log.Error().Err(err).Msg("failed to get gzip level, using default (DefaultCompression)")
-		compLevel = flate.DefaultCompression
-	}
-	gzipWriter, _ := gzip.NewWriterLevel(w, compLevel)
-	return &Gzip{
-		level: level,
-		w:     *gzipWriter,
-	}
-}
-
-type Gunzip struct {
 }

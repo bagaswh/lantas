@@ -51,15 +51,15 @@ type ServerMiddlewares struct {
 }
 
 type ServerTLS struct {
-	CertFile    string             `yaml:"certFile"`
-	KeyFile     string             `yaml:"keyFile"`
-	Upstreams   ServerUpstreams    `yaml:"upstreams"`
-	Middlewares *ServerMiddlewares `yaml:"middlewares"`
+	CertFile string `yaml:"certFile"`
+	KeyFile  string `yaml:"keyFile"`
 }
 
 type Server struct {
-	Listen *ServerListen `yaml:"listen"`
-	TLS    *ServerTLS    `yaml:"tls"`
+	Listen      *ServerListen      `yaml:"listen"`
+	TLS         *ServerTLS         `yaml:"tls"`
+	Upstreams   ServerUpstreams    `yaml:"upstreams"`
+	Middlewares *ServerMiddlewares `yaml:"middlewares"`
 }
 
 type Runtime struct {
