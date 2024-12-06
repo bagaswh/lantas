@@ -30,3 +30,8 @@ Lantas-specific binary format that packs compression algorithm used.
 
 - [lantas-left.yml](./examples/lantas-left.yml)
 - [lantas-right.yml](./examples/lantas-right.yml)
+
+## Roadmap
+
+- [ ] Connection draining for clients and upstreams
+- [ ] Upstream queueing

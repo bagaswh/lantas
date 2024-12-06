@@ -4,16 +4,19 @@ import (
 	"flag"
 
 	"github.com/bagaswh/lantas/pkg/config"
+	"github.com/bagaswh/lantas/pkg/lantas"
 	pkgzerolog "github.com/bagaswh/lantas/pkg/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 // flags
 var (
-	configFile = flag.String("configfile", "", "Lantas config file")
+	configFile = flag.String("config-file", "", "Lantas config file")
+	rootDir    = flag.String("root-dir", "", "Lantas will read any relative file path from this dir")
 
 	requiredFlags = []string{
-		"configfile",
+		"config-file",
+		"root-dir",
 	}
 )
 
@@ -38,6 +41,13 @@ func runCmd() {
 	if configValidationErr != nil {
 		log.Fatal().Msgf("failed to validate config: %s", configValidationErr)
 	}
+
+	lantasQ := lantas.NewLantas(rt, *rootDir)
+	initErr := lantasQ.Init()
+	if initErr != nil {
+		log.Fatal().Err(initErr).Msg("failed to init Lantas")
+	}
+	lantasQ.Wait()
 }
 
 func mandatoryFlags() {

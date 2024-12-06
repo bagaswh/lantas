@@ -9,7 +9,7 @@ upstreams:
 
   backend:
     servers:
-      - localhost:9898
+      - localhost:7812
     keepalive: 24
 
 middleware_chains:
@@ -18,8 +18,7 @@ middleware_chains:
       - compression:
           algorithm: gzip
           config:
-            compressionLevel: BEST_COMPRESSION
-            compressionStrategy: DEFAULT_STRATEGY
+            compressionLevel: BestCompression
             # minimum size of data so that compression applies
             # if the data size is less than this, it's not compressed
             sizeThreshold: 1024
@@ -30,18 +29,19 @@ middleware_chains:
           algorithm: gzip
 
 servers:
+  # left: initiator
+  # right: upstream
+  #
+  # left net------------>right net
+  #          compressed
   - listen:
       addresses:
         - 127.0.0.1:4242
       reusePort: true
 
-    tls:
-      certFile: cert.pem
-      keyFile: key.pem
-
     # forward stream to these upstreams
     upstreams:
-      - right
+      - backend
 
     middlewares:
       upstream:
@@ -52,3 +52,24 @@ servers:
         # after read-ing from upstream, apply middlewares to the stream
         postread:
           - name: gunzip
+
+  # right: initiator
+  # left: upstream
+  #
+  # left net<------------right net
+  #          compressed
+  - listen:
+      addresses:
+        - 127.0.0.1:2121
+      reusePort: true
+
+    upstreams:
+      - backend
+
+    middlewares:
+      upstream:
+        prewrite:
+          - name: gunzip
+
+        postread:
+          - name: gzip

@@ -12,6 +12,7 @@ import (
 type Upstream struct {
 	Servers   []string `yaml:"servers"`
 	KeepAlive int      `yaml:"keepalive"`
+	TLS       bool     `yaml:"tls"`
 }
 
 type MiddlewareCompression struct {
@@ -19,12 +20,22 @@ type MiddlewareCompression struct {
 	Config    map[string]any `yaml:"config"`
 }
 
+const (
+	MiddlewareCompressionConfigKey_CompressionLevel = "compressionLevel"
+)
+
+type MiddlewareDecompression struct {
+	Algorithm string         `yaml:"algorithm"`
+	Config    map[string]any `yaml:"config"`
+}
+
 type MiddlewareStep struct {
-	Compression *MiddlewareCompression `yaml:"compression"`
+	Compression   *MiddlewareCompression   `yaml:"compression"`
+	Decompression *MiddlewareDecompression `yaml:"decompression"`
 }
 
 type MiddlewareChain struct {
-	Steps []*MiddlewareStep
+	Steps []*MiddlewareStep `yaml:"steps"`
 }
 
 type Upstreams map[string]*Upstream
@@ -43,8 +54,8 @@ type ServerMiddleware struct {
 	Name string `yaml:"name"`
 }
 type ServerMiddlewareUpstream struct {
-	PreWrite *ServerMiddleware
-	PostRead *ServerMiddleware
+	PreWrite []*ServerMiddleware `yaml:"prewrite"`
+	PostRead []*ServerMiddleware `yaml:"postread"`
 }
 type ServerMiddlewares struct {
 	Upstream *ServerMiddlewareUpstream `yaml:"upstream"`
@@ -70,6 +81,17 @@ type Runtime struct {
 }
 
 func (rt *Runtime) Validate() error {
+	if rt == nil {
+		return makeConfigValidationError("where's the config?")
+	}
+
+	upstreams := rt.Upstreams
+	for name, upstream := range upstreams {
+		if len(upstream.Servers) > 1 {
+			return makeConfigValidationError(fmt.Sprintf("'servers' field in upstreams[%s] can only accept one server.s", name))
+		}
+	}
+
 	if rt.Servers == nil {
 		return makeConfigValidationError("'servers' field is required")
 	}
@@ -80,6 +102,13 @@ func (rt *Runtime) Validate() error {
 		}
 		if len(svr.Listen.Addresses) == 0 {
 			return makeConfigValidationError(fmt.Sprintf("'listen.addresses' field in servers[%d] is of length 0. Server must listen to at least one address.", i))
+		}
+		if len(svr.Upstreams) == 0 {
+			return makeConfigValidationError(fmt.Sprintf("'upstreams' field in servers[%d] must have at least one upstream.", i))
+		}
+		svrUpstream := svr.Upstreams[0]
+		if _, ok := rt.Upstreams[svrUpstream]; !ok {
+			return makeConfigValidationError(fmt.Sprintf("specified upstream %s in servers[%d] does not exist in the global upstreams list.", svrUpstream, i))
 		}
 	}
 
@@ -109,16 +138,21 @@ func ReadConfig(file string) (*Runtime, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed opening config file: %w", err)
 	}
+	defer f.Close()
 
 	configBytes, readErr := io.ReadAll(f)
 	if readErr != nil {
-		return nil, fmt.Errorf("failed reading config file: %w", err)
+		return nil, fmt.Errorf("failed reading config file: %w", readErr)
 	}
 
-	var rt Runtime
-	unmarshalErr := yaml.Unmarshal(configBytes, rt)
+	rt := Runtime{}
+	unmarshalErr := yaml.Unmarshal(configBytes, &rt)
 	if unmarshalErr != nil {
-		return nil, fmt.Errorf("failed yaml unmarshalling config file: %w", err)
+		return nil, fmt.Errorf("failed yaml unmarshalling config file: %w", unmarshalErr)
+	}
+
+	if err := rt.Validate(); err != nil {
+		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
 	return &rt, nil
