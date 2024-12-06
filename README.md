@@ -34,8 +34,10 @@ Lantas-specific binary format that packs compression algorithm used.
 ## TODO
 
 - [ ] Implement the binary protocol to make it actually work
+- [ ] Observability
 
 ## Roadmap
 
 - [ ] Connection draining for clients and upstreams
 - [ ] Upstream queueing
+- [ ] Working connection pool
