@@ -1,0 +1,3 @@
+[submodule "third_party/bg"]
+	path = third_party/bg
+	url = https://github.com/bagaswh/bg.git
