@@ -1,3 +1,3 @@
 # lantas
 
-![Lantas?](assets/lantas.png "Lantas?")
+![Lantas?](assets/lantas.jpg "Lantas?")
