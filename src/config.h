@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <unistd.h>
 
 struct socket_config {

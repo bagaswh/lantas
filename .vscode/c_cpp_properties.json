@@ -3,8 +3,9 @@
         {
             "name": "Linux",
             "includePath": [
+                "${workspaceFolder}/",
                 "${workspaceFolder}/includes/",
-                "${workspaceFolder}/third_party/"
+                "${workspaceFolder}/third_party/bg/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
