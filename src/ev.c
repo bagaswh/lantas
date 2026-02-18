@@ -32,8 +32,8 @@ main(int argc, char *argv[])
         usage_error(argv[0]);
 
     char *filename = argv[1];
-    int fd = open(filename, O_RDONLY | O_NONBLOCK, 0644);
-    if (fd == -1) {
+    int file_fd = open(filename, O_RDONLY | O_NONBLOCK, 0644);
+    if (file_fd == -1) {
         fprintf(stderr, "Failed to open file %s: %s\n", filename,
                 strerror(errno));
         exit(1);
@@ -44,28 +44,37 @@ main(int argc, char *argv[])
     struct timeval timeout = { .tv_sec = 0, .tv_usec = 0 };
     char buf[10];
 
-    // Build file descriptor sets
-    nfds = 0;
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_SET(fd, &readfds);
-    FD_SET(fd, &writefds);
-    nfds = fd + 1;
-
-    FD_SET(STDIN_FILENO, &writefds);
-
     for (;;) {
+        FD_ZERO(&readfds);
+        FD_ZERO(&writefds);
+        FD_SET(file_fd, &readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        nfds = file_fd + 1;
         if ((ready = select(nfds, &readfds, &writefds, NULL, NULL)) == -1)
             err_exit("select");
 
-        for (fd = 0; fd < nfds; fd++) {
-            char ready = 0;
+        for (int fd = 0; fd <= nfds; fd++) {
+            char fd_ready = 0;
             if (FD_ISSET(fd, &readfds))
-                ready = 'r';
+                fd_ready = 'r';
             if (FD_ISSET(fd, &writefds))
-                ready = 'w';
+                fd_ready = 'w';
             if (ready > 0)
-                printf("%d ready for %c\n", fd, ready);
+                printf("%d ready for %c\n", fd, fd_ready);
+
+            if (fd_ready == 'r') {
+                num_read = read(file_fd, buf, 10);
+                if (num_read == -1)
+                    err_exit("read");
+                if (num_read == 0)
+                    break;
+                printf("Read %d bytes: %s\n", num_read, buf);
+            } else if (fd_ready == 'w') {
+                printf("Write to stdin\n");
+                j = write(fd, "Hello World\n", 13);
+                if (j == -1)
+                    err_exit("write");
+            }
         }
     }
 
